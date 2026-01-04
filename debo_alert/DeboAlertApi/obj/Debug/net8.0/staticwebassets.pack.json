@@ -1,0 +1,41 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\0fa438f3-9359-4dd2-affd-68d3035dd88e_scaled_IMG_20251004_102051_432.jpg",
+      "PackagePath": "staticwebassets\\uploads\\0fa438f3-9359-4dd2-affd-68d3035dd88e_scaled_IMG_20251004_102051_432.jpg"
+    },
+    {
+      "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\403ee80d-d072-440a-a4b2-b6f06efa21c2_scaled_photo_2024-02-09_20-16-46.jpg",
+      "PackagePath": "staticwebassets\\uploads\\403ee80d-d072-440a-a4b2-b6f06efa21c2_scaled_photo_2024-02-09_20-16-46.jpg"
+    },
+    {
+      "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\53fa65fc-3c1a-4383-8c5e-460d4bbc5611_scaled_MOBILE.jpg",
+      "PackagePath": "staticwebassets\\uploads\\53fa65fc-3c1a-4383-8c5e-460d4bbc5611_scaled_MOBILE.jpg"
+    },
+    {
+      "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\e9932614-6642-45de-a193-e7128eaf4863_scaled_images.png",
+      "PackagePath": "staticwebassets\\uploads\\e9932614-6642-45de-a193-e7128eaf4863_scaled_images.png"
+    },
+    {
+      "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\f05f05c9-454b-4f96-bab2-d2d75ed05d14_dag.jpg",
+      "PackagePath": "staticwebassets\\uploads\\f05f05c9-454b-4f96-bab2-d2d75ed05d14_dag.jpg"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.DeboAlertApi.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.DeboAlertApi.props",
+      "PackagePath": "build\\DeboAlertApi.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.DeboAlertApi.props",
+      "PackagePath": "buildMultiTargeting\\DeboAlertApi.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.DeboAlertApi.props",
+      "PackagePath": "buildTransitive\\DeboAlertApi.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

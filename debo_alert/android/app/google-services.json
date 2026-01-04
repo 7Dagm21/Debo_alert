@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "213617734222",
+    "project_id": "debo-alert",
+    "storage_bucket": "debo-alert.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:213617734222:android:2aa15c904d623af5aec91f",
+        "android_client_info": {
+          "package_name": "com.example.facebook"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCF2qIZdYh9u8VJK5jYEMKWgasfFgE_Gvo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
