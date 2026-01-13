@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'sign_up.dart';
 import 'home.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'admin_home_page.dart';
+import 'GoogleSinIn.dart'; // Add this import at the top
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add this import
 
 class SignInScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -17,6 +20,11 @@ class _SignInScreenState extends State<SignInScreen> {
   final email = TextEditingController();
   final password = TextEditingController();
 
+  bool _obscurePassword = true;
+
+  // Use API base URL from .env
+  final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5099';
+
   @override
   void dispose() {
     email.dispose();
@@ -25,12 +33,14 @@ class _SignInScreenState extends State<SignInScreen> {
   }
 
   bool _isValidEmail(String value) {
-    return RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value);
+    return RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    ).hasMatch(value);
   }
 
   void _login() async {
     final enteredEmail = email.text.trim();
-    final enteredPassword = password.text;
+    final enteredPassword = password.text.trim();
 
     if (enteredEmail.isEmpty || enteredPassword.isEmpty) {
       _toast("All fields are required");
@@ -55,7 +65,6 @@ class _SignInScreenState extends State<SignInScreen> {
         await FirebaseAuth.instance.signOut();
         return;
       }
-      // Print Firebase ID token for API testing
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final idToken = await user.getIdToken(true);
@@ -63,21 +72,33 @@ class _SignInScreenState extends State<SignInScreen> {
         print('=== COPY THIS TOKEN FOR API TESTING ===');
         // ignore: avoid_print
         print(idToken);
-      }
-      // Fetch role from Firestore
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .get();
-      final role = doc.data()?['role'] ?? 'user';
-      if (role == 'admin') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => AdminHomePage(onToggleTheme: widget.onToggleTheme),
-          ),
+
+        // Fetch admin status from backend
+        final response = await http.get(
+          Uri.parse('$apiUrl/api/users'), // Use apiUrl here
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $idToken',
+          },
         );
-      } else {
+        if (response.statusCode == 200) {
+          final List<dynamic> users = json.decode(response.body);
+          final userData = users.firstWhere(
+            (u) => u['email'] == user.email,
+            orElse: () => null,
+          );
+          if (userData != null && userData['isAdmin'] == true) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    AdminHomePage(onToggleTheme: widget.onToggleTheme),
+              ),
+            );
+            return;
+          }
+        }
+        // Default to user page
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -105,51 +126,65 @@ class _SignInScreenState extends State<SignInScreen> {
             _topBar(context),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: Column(
-                children: [
-                  const SizedBox(height: 80),
-                  const Icon(
-                    Icons.notifications_active,
-                    size: 60,
-                    color: Color(0xFFFF4D2D),
-                  ),
-
-                  const SizedBox(height: 16),
-                  Text(
-                    "Welcome back",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black,
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 80),
+                    const Icon(
+                      Icons.notifications_active,
+                      size: 60,
+                      color: Color(0xFFFF4D2D),
                     ),
-                  ),
-
-                  const SizedBox(height: 16),
-                  _googleButton(isDark, context, widget.onToggleTheme),
-
-                  const SizedBox(height: 26),
-                  _field("Email", email, isDark),
-                  const SizedBox(height: 16),
-                  _field("Password", password, isDark, obscure: true),
-
-                  const SizedBox(height: 22),
-                  _primaryButton("Login", _login),
-
-                  const SizedBox(height: 20),
-                  TextButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            SignUpScreen(onToggleTheme: widget.onToggleTheme),
+                    const SizedBox(height: 16),
+                    Text(
+                      "Welcome back",
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black,
                       ),
                     ),
-                    child: const Text(
-                      "Create account",
-                      style: TextStyle(color: Color(0xFFFF4D2D)),
+                    const SizedBox(height: 16),
+                    _googleButton(isDark, context, widget.onToggleTheme),
+                    const SizedBox(height: 26),
+                    _field("Email", email, isDark),
+                    const SizedBox(height: 16),
+                    _field(
+                      "Password",
+                      password,
+                      isDark,
+                      obscure: _obscurePassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 22),
+                    _primaryButton("Login", _login),
+                    const SizedBox(height: 20),
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              SignUpScreen(onToggleTheme: widget.onToggleTheme),
+                        ),
+                      ),
+                      child: const Text(
+                        "Create account",
+                        style: TextStyle(color: Color(0xFFFF4D2D)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -189,12 +224,8 @@ Widget _googleButton(
   BuildContext context,
   VoidCallback onToggleTheme,
 ) => OutlinedButton.icon(
-  onPressed: () {
-    // TODO: Implement Google Sign-In functionality or import the correct file.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Google Sign-In not implemented.')),
-    );
-  },
+  onPressed: () =>
+      GoogleSignInHelper.signInWithGoogleUI(context, onToggleTheme),
   icon: const Icon(Icons.g_mobiledata, size: 28),
   label: const Text("Continue with Google"),
 );
@@ -204,6 +235,7 @@ Widget _field(
   TextEditingController c,
   bool isDark, {
   bool obscure = false,
+  Widget? suffixIcon,
 }) => TextField(
   controller: c,
   obscureText: obscure,
@@ -212,6 +244,7 @@ Widget _field(
     filled: true,
     fillColor: isDark ? Colors.white12 : Colors.black12,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    suffixIcon: suffixIcon,
   ),
 );
 

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'dashboard_page.dart';
 import 'users_page.dart';
 import 'reports_page.dart';
 import 'alerts_page.dart';
-import 'settings_page.dart';
+import 'profile.dart';
 
 class AdminHomePage extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -17,13 +16,17 @@ class AdminHomePage extends StatefulWidget {
 class _AdminHomePageState extends State<AdminHomePage> {
   int _selectedIndex = 0;
 
-  final List<Widget> _pages = [
-    const DashboardPage(),
-    UsersPage(),
-    ReportsPage(),
-    const AlertsPage(),
-    const SettingsPage(),
-  ];
+  List<Widget> _buildPages(BuildContext context) {
+    return [
+      const UsersPage(),
+      ReportsPage(),
+      const AlertsPage(),
+      ProfilePage(
+        onToggleTheme: widget.onToggleTheme,
+        themeMode: Theme.of(context).brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
+      ),
+    ];
+  }
 
   final List<String> _pageTitles = [
     'Debo Alert',
@@ -57,7 +60,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           ),
         ],
       ),
-      body: _pages[_selectedIndex],
+      body: _buildPages(context)[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (index) {
@@ -72,10 +75,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
           context,
         ).bottomNavigationBarTheme.backgroundColor,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
           BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Users'),
           BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Reports'),
           BottomNavigationBarItem(
@@ -83,8 +82,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
             label: 'Alerts',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
+            icon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
       ),

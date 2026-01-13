@@ -10,6 +10,7 @@ namespace DeboAlertApi.Data
 
         public DbSet<UserProfile> UserProfiles { get; set; }
         public DbSet<Report> Reports { get; set; }
+        public DbSet<Alert> Alerts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

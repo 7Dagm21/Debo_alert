@@ -19,6 +19,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final pass = TextEditingController();
   final confirm = TextEditingController();
 
+  bool _obscurePassword = true;
+  bool _obscureConfirm = true;
+
   bool _isLoading = false;
 
   // Use the local isDark variable and widget.onToggleTheme instead
@@ -67,9 +70,43 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: 26),
                   _field("Email", email, isDark),
                   const SizedBox(height: 16),
-                  _field("Password", pass, isDark, obscure: true),
+                  _field(
+                    "Password",
+                    pass,
+                    isDark,
+                    obscure: _obscurePassword,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscurePassword = !_obscurePassword;
+                        });
+                      },
+                    ),
+                  ),
                   const SizedBox(height: 16),
-                  _field("Confirm Password", confirm, isDark, obscure: true),
+                  _field(
+                    "Confirm Password",
+                    confirm,
+                    isDark,
+                    obscure: _obscureConfirm,
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscureConfirm
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _obscureConfirm = !_obscureConfirm;
+                        });
+                      },
+                    ),
+                  ),
 
                   const SizedBox(height: 22),
                   _primaryButton("Sign Up", () async {
@@ -174,23 +211,19 @@ Widget _googleButton(
   bool isDark,
   BuildContext context,
   VoidCallback onToggleTheme,
-) => kIsWeb
-    ? OutlinedButton.icon(
-        onPressed: () => signInWithGoogle(context, onToggleTheme),
-        icon: const Icon(Icons.g_mobiledata, size: 28),
-        label: const Text("Continue with Google"),
-      )
-    : OutlinedButton.icon(
-        onPressed: () => signInWithGoogle(context, onToggleTheme),
-        icon: const Icon(Icons.g_mobiledata, size: 28),
-        label: const Text("Continue with Google"),
-      );
+) => OutlinedButton.icon(
+  onPressed: () =>
+      GoogleSignInHelper.signInWithGoogleUI(context, onToggleTheme),
+  icon: const Icon(Icons.g_mobiledata, size: 28),
+  label: const Text("Continue with Google"),
+);
 
 Widget _field(
   String label,
   TextEditingController c,
   bool isDark, {
   bool obscure = false,
+  Widget? suffixIcon,
 }) => TextField(
   controller: c,
   obscureText: obscure,
@@ -199,6 +232,7 @@ Widget _field(
     filled: true,
     fillColor: isDark ? Colors.white12 : Colors.black12,
     border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    suffixIcon: suffixIcon,
   ),
 );
 

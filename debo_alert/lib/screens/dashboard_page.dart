@@ -1,10 +1,76 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add this import
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
   @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  bool _loading = true;
+  String? _error;
+  Map<String, dynamic>? _stats;
+  List<dynamic> _recentAlerts = [];
+
+  // Use API base URL from .env
+  final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5099';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDashboardData();
+  }
+
+  Future<void> _fetchDashboardData() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      // Fetch all reports
+      final reportsRes = await http.get(
+        Uri.parse('$apiUrl/api/report'), // Use apiUrl here
+      );
+      final List<dynamic> reports = safeDecode(reportsRes.body) ?? [];
+
+      setState(() {
+        _stats = {
+          'activeAlerts': reports.where((r) => r['status'] == 'Active').length,
+          'verifiedAlerts': reports
+              .where((r) => r['status'] == 'Verified')
+              .length,
+          'totalReports': reports.length,
+        };
+        // Show the 5 most recent alerts (assuming reports are sorted by date descending)
+        _recentAlerts = reports.take(5).toList();
+      });
+    } catch (e) {
+      setState(() {
+        _error = 'Error: $e';
+      });
+    } finally {
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(child: Text(_error!));
+    }
+    if (_stats == null) {
+      return const Center(child: Text('No data'));
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -21,35 +87,42 @@ class DashboardPage extends StatelessWidget {
           ),
           const SizedBox(height: 24),
 
-          // Stats Cards with updated names and colors
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.5,
+          // Stats Cards with real data
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildStatCard(context, '1,247', 'Total Users', Icons.people),
-              _buildStatCard(context, '23', 'Active Alerts', Icons.warning),
-              _buildStatCard(
-                context,
-                '1,189',
-                'Verified Alerts',
-                Icons.verified,
+              Expanded(
+                child: _buildStatCard(
+                  context,
+                  _stats!['activeAlerts'].toString(),
+                  'Active Alerts',
+                  Icons.warning,
+                ),
               ),
-              _buildStatCard(
-                context,
-                '8,542',
-                'Registrations',
-                Icons.app_registration,
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  context,
+                  _stats!['verifiedAlerts'].toString(),
+                  'Verified Alerts',
+                  Icons.verified,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  context,
+                  _stats!['totalReports'].toString(),
+                  'Total Reports',
+                  Icons.report,
+                ),
               ),
             ],
           ),
 
           const SizedBox(height: 24),
 
-          // User Emergency Map
+          // User Emergency Map (dummy, replace with real map if you have location data)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -61,9 +134,9 @@ class DashboardPage extends StatelessWidget {
               children: [
                 Text(
                   'User Emergency Map',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Container(
@@ -82,7 +155,7 @@ class DashboardPage extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // Recent Alerts Table
+          // Recent Alerts Table with real data
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -94,9 +167,9 @@ class DashboardPage extends StatelessWidget {
               children: [
                 Text(
                   'Recent Alerts',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SingleChildScrollView(
@@ -104,68 +177,23 @@ class DashboardPage extends StatelessWidget {
                   child: DataTable(
                     columns: const [
                       DataColumn(label: Text('Location')),
-                      DataColumn(label: Text('Address')),
-                      DataColumn(label: Text('Messages')),
+                      DataColumn(label: Text('Description')),
+                      DataColumn(label: Text('Status')),
                       DataColumn(label: Text('Type')),
                     ],
-                    rows: const [
-                      DataRow(
+                    rows: _recentAlerts.map<DataRow>((alert) {
+                      return DataRow(
                         cells: [
-                          DataCell(Text('Redbeard')),
-                          DataCell(Text('9:00 PM')),
-                          DataCell(Text('3 messages')),
-                          DataCell(_AlertTypeCell('Fire', Colors.red)),
+                          DataCell(Text(alert['location'] ?? '')),
+                          DataCell(Text(alert['description'] ?? '')),
+                          DataCell(Text(alert['status'] ?? '')),
+                          DataCell(
+                            _AlertTypeCell(alert['type'] ?? '', Colors.red),
+                          ),
                         ],
-                      ),
-                      DataRow(
-                        cells: [
-                          DataCell(Text('Pocket')),
-                          DataCell(Text('10 Mobile Square')),
-                          DataCell(Text('12 messages')),
-                          DataCell(_AlertTypeCell('Medical', Colors.blue)),
-                        ],
-                      ),
-                      DataRow(
-                        cells: [
-                          DataCell(Text('Plaza')),
-                          DataCell(Text('4 Kite')),
-                          DataCell(Text('24 messages')),
-                          DataCell(_AlertTypeCell('Violence', Colors.orange)),
-                        ],
-                      ),
-                    ],
+                      );
+                    }).toList(),
                   ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Additional Statistics
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'System Statistics',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _buildMiniStat('98%', 'Uptime'),
-                    _buildMiniStat('2.3s', 'Avg Response'),
-                    _buildMiniStat('256', 'Today'),
-                  ],
                 ),
               ],
             ),
@@ -187,44 +215,28 @@ class DashboardPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 32, color: const Color(0xFFFF4D2D)),
-            const SizedBox(height: 8),
+            Icon(icon, size: 26, color: const Color(0xFFFF4D2D)),
+            const SizedBox(height: 4),
             Text(
               value,
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: const Color(0xFFFF4D2D),
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               label,
-              style: Theme.of(context).textTheme.bodyLarge,
+              style: Theme.of(context).textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildMiniStat(String value, String label) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFFFF4D2D),
-          ),
-        ),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      ],
     );
   }
 }
@@ -248,5 +260,14 @@ class _AlertTypeCell extends StatelessWidget {
         style: TextStyle(color: color, fontWeight: FontWeight.w500),
       ),
     );
+  }
+}
+
+dynamic safeDecode(String body) {
+  if (body.isEmpty) return null;
+  try {
+    return json.decode(body);
+  } catch (_) {
+    return null;
   }
 }

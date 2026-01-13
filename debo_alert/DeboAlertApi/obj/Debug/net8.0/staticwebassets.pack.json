@@ -13,12 +13,32 @@
       "PackagePath": "staticwebassets\\uploads\\53fa65fc-3c1a-4383-8c5e-460d4bbc5611_scaled_MOBILE.jpg"
     },
     {
+      "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\5b7761b9-d5c0-4955-b596-8dd0d7178652_scaled_1000004631.jpg",
+      "PackagePath": "staticwebassets\\uploads\\5b7761b9-d5c0-4955-b596-8dd0d7178652_scaled_1000004631.jpg"
+    },
+    {
+      "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\e8ae3631-4f0e-4fbf-bc3d-040c8685d698_scaled_1000004631.jpg",
+      "PackagePath": "staticwebassets\\uploads\\e8ae3631-4f0e-4fbf-bc3d-040c8685d698_scaled_1000004631.jpg"
+    },
+    {
       "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\e9932614-6642-45de-a193-e7128eaf4863_scaled_images.png",
       "PackagePath": "staticwebassets\\uploads\\e9932614-6642-45de-a193-e7128eaf4863_scaled_images.png"
     },
     {
       "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\f05f05c9-454b-4f96-bab2-d2d75ed05d14_dag.jpg",
       "PackagePath": "staticwebassets\\uploads\\f05f05c9-454b-4f96-bab2-d2d75ed05d14_dag.jpg"
+    },
+    {
+      "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\profiles\\79957541-651e-44c1-a6ca-32a4a085b1b2.jpg",
+      "PackagePath": "staticwebassets\\uploads\\profiles\\79957541-651e-44c1-a6ca-32a4a085b1b2.jpg"
+    },
+    {
+      "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\profiles\\7b0be014-d87c-4454-9b27-f79c5bc55a5b.jpg",
+      "PackagePath": "staticwebassets\\uploads\\profiles\\7b0be014-d87c-4454-9b27-f79c5bc55a5b.jpg"
+    },
+    {
+      "Id": "C:\\Users\\leult\\OneDrive\\Desktop\\output\\flutter\\debo_alert\\DeboAlertApi\\wwwroot\\uploads\\profiles\\d380a4f0-9f4c-4451-a6a7-0a1f94931433.jpg",
+      "PackagePath": "staticwebassets\\uploads\\profiles\\d380a4f0-9f4c-4451-a6a7-0a1f94931433.jpg"
     },
     {
       "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.DeboAlertApi.Microsoft.AspNetCore.StaticWebAssets.props",

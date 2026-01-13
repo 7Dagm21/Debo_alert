@@ -2,8 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:io';
-import 'package:flutter/foundation.dart'; 
+import 'package:flutter/foundation.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add this import
+
+PreferredSizeWidget buildDeboAppBar(
+  BuildContext context,
+  VoidCallback onToggleTheme, {
+  String title = 'Debo Alert',
+}) {
+  return AppBar(
+    title: Row(
+      children: [
+        const Icon(Icons.notifications_active, color: Color(0xFFFF4D2D)),
+        const SizedBox(width: 8),
+        Text(title),
+      ],
+    ),
+    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+    actions: [
+      IconButton(
+        onPressed: onToggleTheme,
+        icon: Icon(
+          Theme.of(context).brightness == Brightness.dark
+              ? Icons.light_mode
+              : Icons.dark_mode,
+        ),
+      ),
+    ],
+  );
+}
 
 class ReportPage extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -20,6 +48,9 @@ class _ReportPageState extends State<ReportPage> {
   bool _isVideo = false;
   bool _isLoading = false;
 
+  // Use API base URL from .env
+  final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5099';
+
   final List<String> _categories = [
     "Medical",
     "Car Accident",
@@ -30,7 +61,7 @@ class _ReportPageState extends State<ReportPage> {
     "Desert Fire",
   ];
 
-Future<void> _pickMedia() async {
+  Future<void> _pickMedia() async {
     final picker = ImagePicker();
     final XFile? pickedFile = await showModalBottomSheet<XFile?>(
       context: context,
@@ -99,7 +130,7 @@ Future<void> _pickMedia() async {
     }
   }
 
-Future<void> _submitReport() async {
+  Future<void> _submitReport() async {
     if (_selectedCategory == null || _descController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -117,7 +148,7 @@ Future<void> _submitReport() async {
 
     try {
       var dio = Dio();
-      var uri = 'http://10.2.71.11:5099/api/report';
+      var uri = '$apiUrl/api/report'; // Use apiUrl here
 
       // Create form data
       var formData = FormData.fromMap({
@@ -194,15 +225,7 @@ Future<void> _submitReport() async {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Report Emergency'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.brightness_6),
-            onPressed: widget.onToggleTheme,
-          ),
-        ],
-      ),
+      appBar: buildDeboAppBar(context, widget.onToggleTheme),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(

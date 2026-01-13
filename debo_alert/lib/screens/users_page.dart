@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add this import
 
 class UsersPage extends StatefulWidget {
   const UsersPage({super.key});
@@ -14,6 +16,9 @@ class _UsersPageState extends State<UsersPage> {
   List<Map<String, dynamic>> _users = [];
   List<Map<String, dynamic>> _filteredUsers = [];
 
+  // Use API base URL from .env
+  final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5099';
+
   @override
   void initState() {
     super.initState();
@@ -23,9 +28,16 @@ class _UsersPageState extends State<UsersPage> {
 
   Future<void> _fetchUsers() async {
     try {
+      // Get Firebase token
+      final user = await FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+      final token = await user.getIdToken();
       final response = await http.get(
-        Uri.parse('http://10.2.71.11:5099/api/users'),
-        headers: {'Accept': 'application/json'},
+        Uri.parse('$apiUrl/api/users'), // Use apiUrl here
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -33,16 +45,13 @@ class _UsersPageState extends State<UsersPage> {
           _users = data
               .map<Map<String, dynamic>>(
                 (user) => {
-                  // No name field in backend, use email as display name or add a Name field in backend if needed
                   'name': user['email'] ?? '',
                   'email': user['email'] ?? '',
                   'phone': user['phoneNumber'] ?? '',
                   'joinDate': user['createdAt'] != null
                       ? user['createdAt'].toString().split('T')[0]
                       : '',
-                  // If you want to show report count, you need to join with reports in backend and add a 'reports' field
-                  'reports': user['reports'] ?? 0,
-                  // No status field in backend, default to 'Active'
+                  'isAdmin': user['isAdmin'] ?? false,
                   'status': 'Active',
                 },
               )
@@ -89,7 +98,7 @@ class _UsersPageState extends State<UsersPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Manage registered users and their activities',
+            'Manage registered users and their roles',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 24),
@@ -119,44 +128,6 @@ class _UsersPageState extends State<UsersPage> {
                     : null,
               ),
             ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // Stats Cards
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.5,
-            children: [
-              _buildStatCard(
-                context,
-                '${_users.length}',
-                'Total Users',
-                Icons.people,
-              ),
-              _buildStatCard(
-                context,
-                '${_users.where((u) => u['status'] == 'Active').length}',
-                'Active Users',
-                Icons.check_circle,
-              ),
-              _buildStatCard(
-                context,
-                '${_users.fold(0, (sum, user) => sum + (user['reports'] as int))}',
-                'Total Reports',
-                Icons.report,
-              ),
-              _buildStatCard(
-                context,
-                '9',
-                'Decko Alert',
-                Icons.notification_important,
-              ),
-            ],
           ),
 
           const SizedBox(height: 24),
@@ -196,8 +167,8 @@ class _UsersPageState extends State<UsersPage> {
                       DataColumn(label: Text('Email')),
                       DataColumn(label: Text('Phone')),
                       DataColumn(label: Text('Join Date')),
-                      DataColumn(label: Text('Reports')),
                       DataColumn(label: Text('Status')),
+                      DataColumn(label: Text('Role')),
                       DataColumn(label: Text('Actions')),
                     ],
                     rows: _filteredUsers.map((user) {
@@ -206,7 +177,6 @@ class _UsersPageState extends State<UsersPage> {
                           DataCell(Text(user['email'])),
                           DataCell(Text(user['phone'])),
                           DataCell(Text(user['joinDate'])),
-                          DataCell(Text('${user['reports']}')),
                           DataCell(
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -228,6 +198,23 @@ class _UsersPageState extends State<UsersPage> {
                                   fontWeight: FontWeight.w500,
                                 ),
                               ),
+                            ),
+                          ),
+                          DataCell(
+                            Row(
+                              children: [
+                                Switch(
+                                  value: user['isAdmin'] == true,
+                                  onChanged: (val) {
+                                    _setAdmin(user, val);
+                                  },
+                                  activeColor: Colors.blue,
+                                  inactiveThumbColor: Colors.grey,
+                                ),
+                                Text(
+                                  user['isAdmin'] == true ? 'Admin' : 'User',
+                                ),
+                              ],
                             ),
                           ),
                           DataCell(
@@ -261,6 +248,32 @@ class _UsersPageState extends State<UsersPage> {
         ],
       ),
     );
+  }
+
+  void _setAdmin(Map<String, dynamic> user, bool isAdmin) async {
+    try {
+      final currentUser = await FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return;
+      final token = await currentUser.getIdToken();
+      final response = await http.patch(
+        Uri.parse('$apiUrl/api/users/admin'), // Use apiUrl here
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({'email': user['email'], 'isAdmin': isAdmin}),
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          user['isAdmin'] = isAdmin;
+        });
+      } else {
+        // Optionally show error
+      }
+    } catch (e) {
+      // Optionally handle error
+    }
   }
 
   void _deleteUser(Map<String, dynamic> user) {

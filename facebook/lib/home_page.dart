@@ -97,7 +97,6 @@ class HomePage extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       color: Colors.white,
-      padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

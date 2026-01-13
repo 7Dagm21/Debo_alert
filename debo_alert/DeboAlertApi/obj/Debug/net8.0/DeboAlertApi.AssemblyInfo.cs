@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("DeboAlertApi")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bc590331d92702e51e559ea893c9dd1e3d5ee3b8")]
 [assembly: System.Reflection.AssemblyProductAttribute("DeboAlertApi")]
 [assembly: System.Reflection.AssemblyTitleAttribute("DeboAlertApi")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

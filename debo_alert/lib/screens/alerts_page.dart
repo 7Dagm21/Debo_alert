@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add this import
 
 class AlertsPage extends StatefulWidget {
   const AlertsPage({super.key});
@@ -15,106 +19,157 @@ class _AlertsPageState extends State<AlertsPage> {
   String _selectedRegion = 'Bole Road';
   String _selectedSeverity = 'Medium';
 
+  // Add this line to get the API base URL from .env
+  final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5099';
+
+  Future<void> _sendAdminAlert() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Not authenticated.')));
+        return;
+      }
+      final token = await user.getIdToken();
+      final response = await http.post(
+        Uri.parse('$apiUrl/api/alerts'), // Use apiUrl here
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: json.encode({
+          'title': _titleController.text,
+          'region': _selectedRegion,
+          'severity': _selectedSeverity,
+          'description': _descriptionController.text,
+        }),
+      );
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        _titleController.clear();
+        _descriptionController.clear();
+        setState(() {}); // Refresh UI
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Alert sent successfully!')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send alert: ${response.statusCode}'),
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchRecentAlerts() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return [];
+      final token = await user.getIdToken();
+      final response = await http.get(
+        Uri.parse('$apiUrl/api/alerts'), // Use apiUrl here
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return [];
+  }
+
   final List<String> _regions = [
     'Bole Road',
-    'Plaza Area',
-    'Medical Square',
-    '4 Kite',
-    'Mexico',
+    'Kazanchis',
+    'Arat Kilo',
     'Piazza',
-    'Meskel Square',
+    'Megenagna',
+    'Mexico',
+    'Saris',
+    'Gullele',
+    'Addis Ketema',
+    'Lideta',
+    'Kirkos',
+    'Yeka',
+    'Nifas Silk',
+    'Akaki Kality',
+    'Bole',
+    'Lafto',
+    'Kolfe Keranio',
+    'Gurd Shola',
+    'CMC',
+    'Ayat',
+    'Summit',
+    'Jemo',
+    'Gerji',
+    'Bambis',
+    'Torhailoch',
+    'Bole Medhanialem',
+    'Bole Michael',
+    'Bole Bulbula',
+    'Bole Atlas',
+    'Bole Japan',
+    'Bole Rwanda',
+    'Bole Dembel',
+    'Bole Olympia',
+    'Bole Friendship',
+    'Bole Chechnya',
+    'Bole Gotera',
+    'Bole Fanta',
+    'Bole Tele',
+    'Bole Edna Mall',
     'Bole Airport',
+    'Bole Millennium',
+    'Bole Sheger',
+    'Bole Goro',
+    'Bole Yerer',
+    'Bole Arabsa',
+    'Bole Ayat',
+    'Bole Summit',
+    'Bole Gerji',
+    'Bole Sarbet',
+    'Bole Bisrate Gabriel',
+    'Bole 22',
+    'Bole 24',
+    'Bole 23',
+    'Bole 25',
+    'Bole 26',
+    'Bole 27',
+    'Bole 28',
+    'Bole 29',
+    'Bole 30',
+    'Bole 31',
+    'Bole 32',
+    'Bole 33',
+    'Bole 34',
+    'Bole 35',
+    'Bole 36',
+    'Bole 37',
+    'Bole 38',
+    'Bole 39',
+    'Bole 40',
+    'Bole 41',
+    'Bole 42',
+    'Bole 43',
+    'Bole 44',
+    'Bole 45',
+    'Bole 46',
+    'Bole 47',
+    'Bole 48',
+    'Bole 49',
+    'Bole 50',
   ];
 
   final List<String> _severities = ['Low', 'Medium', 'High', 'Critical'];
-
-  final List<Map<String, dynamic>> _recentAlerts = [
-    {
-      'title': 'Heavy Traffic on Belt Road',
-      'region': 'Bole',
-      'severity': 'Medium',
-      'time': '1 min ago',
-      'color': Colors.orange,
-    },
-    {
-      'title': 'Fire Alert - Plaza Area',
-      'region': 'Plaza',
-      'severity': 'High',
-      'time': '15 mins ago',
-      'color': Colors.red,
-    },
-    {
-      'title': 'Medical Emergency - Medical Square',
-      'region': 'Medical',
-      'severity': 'Critical',
-      'time': '25 mins ago',
-      'color': Colors.purple,
-    },
-  ];
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _regionSearchController.dispose();
-    super.dispose();
-  }
-
-  void _sendAlert() {
-    if (_titleController.text.isEmpty || _descriptionController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
-      return;
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Confirm Alert'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Title: ${_titleController.text}'),
-            Text('Region: $_selectedRegion'),
-            Text('Severity: $_selectedSeverity'),
-            const SizedBox(height: 10),
-            const Text(
-              'This alert will be sent to all users in the selected region.',
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF4D2D),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Alert sent successfully!')),
-              );
-              _titleController.clear();
-              _descriptionController.clear();
-              setState(() {
-                _selectedRegion = 'Bole Road';
-                _selectedSeverity = 'Medium';
-              });
-            },
-            child: const Text(
-              'Send Alert',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,9 +178,171 @@ class _AlertsPageState extends State<AlertsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Alerts Broadcast',
-            style: Theme.of(context).textTheme.titleLarge,
+          // Recent Broadcasts
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Recent Broadcasts',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _fetchRecentAlerts(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (snapshot.hasError) {
+                      return Text(
+                        'Error: ${snapshot.error}',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      );
+                    }
+                    final alerts = snapshot.data ?? [];
+                    if (alerts.isEmpty) {
+                      return const Text('No recent alerts.');
+                    }
+                    return Column(
+                      children: alerts.map((alert) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: Theme.of(context).dividerColor,
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 8,
+                                height: 8,
+                                margin: const EdgeInsets.only(top: 6),
+                                decoration: BoxDecoration(
+                                  color: _getSeverityColor(
+                                    alert['severity'] ?? 'low',
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      alert['title'] ?? '',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: _getSeverityColor(
+                                              alert['severity'] ?? 'low',
+                                            ).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            alert['severity'] ?? '',
+                                            style: TextStyle(
+                                              color: _getSeverityColor(
+                                                alert['severity'] ?? 'low',
+                                              ),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          alert['region'] ?? '',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Icon(
+                                          Icons.circle,
+                                          size: 4,
+                                          color: Colors.grey,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          alert['createdAt'] != null
+                                              ? alert['createdAt']
+                                                    .toString()
+                                                    .split('T')[0]
+                                              : '',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              PopupMenuButton<String>(
+                                icon: const Icon(Icons.more_vert),
+                                onSelected: (String newStatus) async {
+                                  await _updateAlertStatus(
+                                    alert['id'],
+                                    newStatus,
+                                  );
+                                  setState(() {});
+                                },
+                                itemBuilder: (BuildContext context) =>
+                                    <PopupMenuEntry<String>>[
+                                      const PopupMenuItem<String>(
+                                        value: 'Active',
+                                        child: Text('Set Active'),
+                                      ),
+                                      const PopupMenuItem<String>(
+                                        value: 'Resolved',
+                                        child: Text('Set Resolved'),
+                                      ),
+                                      const PopupMenuItem<String>(
+                                        value: 'Dismissed',
+                                        child: Text('Set Dismissed'),
+                                      ),
+                                    ],
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -146,9 +363,9 @@ class _AlertsPageState extends State<AlertsPage> {
               children: [
                 Text(
                   'Create New Alert',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const SizedBox(height: 16),
 
@@ -257,7 +474,7 @@ class _AlertsPageState extends State<AlertsPage> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: _sendAlert,
+                    onPressed: _sendAdminAlert,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFFF4D2D),
                       shape: RoundedRectangleBorder(
@@ -275,115 +492,6 @@ class _AlertsPageState extends State<AlertsPage> {
           ),
 
           const SizedBox(height: 24),
-
-          // Recent Broadcasts
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Recent Broadcasts',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 16),
-
-                ..._recentAlerts.map((alert) {
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Theme.of(context).dividerColor),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 8,
-                          height: 8,
-                          margin: const EdgeInsets.only(top: 6),
-                          decoration: BoxDecoration(
-                            color: alert['color'],
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                alert['title'],
-                                style: Theme.of(context).textTheme.bodyLarge
-                                    ?.copyWith(fontWeight: FontWeight.w500),
-                              ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: alert['color'].withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      alert['severity'],
-                                      style: TextStyle(
-                                        color: alert['color'],
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    alert['region'],
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Icon(
-                                    Icons.circle,
-                                    size: 4,
-                                    color: Colors.grey,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    alert['time'],
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.more_vert),
-                          onPressed: () {},
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -424,6 +532,30 @@ class _AlertsPageState extends State<AlertsPage> {
     );
   }
 
+  Future<void> _updateAlertStatus(dynamic alertId, String newStatus) async {
+    try {
+      final user = await FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+      final token = await user.getIdToken();
+      final response = await http.patch(
+        Uri.parse('$apiUrl/api/alerts/$alertId/status'),
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: json.encode(newStatus), // Send raw string, not an object
+      );
+      if (response.statusCode == 200) {
+        setState(() {});
+      } else {
+        // Optionally show error
+      }
+    } catch (e) {
+      // Optionally handle error
+    }
+  }
+
   Color _getSeverityColor(String severity) {
     switch (severity.toLowerCase()) {
       case 'low':
@@ -437,5 +569,34 @@ class _AlertsPageState extends State<AlertsPage> {
       default:
         return Colors.grey;
     }
+  }
+
+  Widget _buildStatusChips(String status) {
+    Color color;
+    String label;
+
+    switch (status) {
+      case 'Pending':
+        color = Colors.orange;
+        label = 'Pending';
+        break;
+      case 'Verified':
+        color = Colors.blue;
+        label = 'Verified';
+        break;
+      case 'Resolved':
+        color = Colors.green;
+        label = 'Resolved';
+        break;
+      default:
+        color = Colors.grey;
+        label = status;
+    }
+
+    return Chip(
+      label: Text(label),
+      backgroundColor: color.withOpacity(0.2),
+      labelStyle: TextStyle(color: color),
+    );
   }
 }

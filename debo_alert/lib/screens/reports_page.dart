@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add this import
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -10,9 +11,38 @@ class ReportsPage extends StatefulWidget {
 }
 
 class _ReportsPageState extends State<ReportsPage> {
+  IconData _categoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'fire':
+        return Icons.local_fire_department;
+      case 'car accident':
+      case 'accident':
+        return Icons.directions_car;
+      case 'medical':
+      case 'health':
+        return Icons.medical_services;
+      case 'crime':
+        return Icons.security;
+      case 'flood':
+        return Icons.water_damage;
+      case 'earthquake':
+        return Icons.public;
+      case 'animal':
+        return Icons.pets;
+      case 'electric':
+      case 'electricity':
+        return Icons.electrical_services;
+      default:
+        return Icons.report;
+    }
+  }
+
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _reports = [];
   List<Map<String, dynamic>> _filteredReports = [];
+
+  // Use API base URL from .env
+  final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5099';
 
   @override
   void initState() {
@@ -24,7 +54,7 @@ class _ReportsPageState extends State<ReportsPage> {
   Future<void> _fetchReports() async {
     try {
       final response = await http.get(
-        Uri.parse('http://10.2.71.11:5099/api/reports'),
+        Uri.parse('$apiUrl/api/report'), // Use apiUrl here
         headers: {'Accept': 'application/json'},
       );
       if (response.statusCode == 200) {
@@ -34,20 +64,16 @@ class _ReportsPageState extends State<ReportsPage> {
               .map<Map<String, dynamic>>(
                 (report) => {
                   'id': report['id'],
-                  // No userName in backend, leave blank or join with user if needed
-                  'userName': '',
-                  // Combine latitude/longitude or add a Location field in backend if needed
+                  'userName': '', // No userName in backend
                   'location':
                       (report['latitude'] != null &&
                           report['longitude'] != null)
                       ? 'Lat: ${report['latitude']}, Lng: ${report['longitude']}'
-                      : '',
-                  'type': report['category'] ?? '',
-                  'time': report['timestamp'] != null
-                      ? report['timestamp'].toString().split('T')[0]
-                      : '',
+                      : 'Unknown',
+                  'type': report['category'] ?? 'Unknown',
+                  'time': (report['timestamp'] ?? '').toString().split('T')[0],
                   'status': report['status'] ?? 'Pending',
-                  'color': _statusColor(report['status']),
+                  'color': _statusColor(report['status'] ?? 'Pending'),
                 },
               )
               .toList();
@@ -91,7 +117,7 @@ class _ReportsPageState extends State<ReportsPage> {
     final report = _filteredReports[index];
     try {
       final response = await http.patch(
-        Uri.parse('http://10.2.71.11:5099/api/reports/${report['id']}'),
+        Uri.parse('$apiUrl/api/report/${report['id']}'), // Use apiUrl here
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'status': newStatus}),
       );
@@ -156,38 +182,54 @@ class _ReportsPageState extends State<ReportsPage> {
 
           const SizedBox(height: 24),
 
-          // Stats Cards
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio: 1.5,
+          // Main Stats Grid
+          SizedBox(
+            height: 380,
+            child: GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1,
+              children: [
+                _buildStatCard(
+                  context,
+                  '${_reports.length}',
+                  'Total Reports',
+                  Icons.report,
+                ),
+                _buildStatCard(
+                  context,
+                  '${_reports.where((r) => r['status'] == 'Pending').length}',
+                  'Pending',
+                  Icons.pending,
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          // Verified and Resolved Cards Row
+          Row(
             children: [
-              _buildStatCard(
-                context,
-                '${_reports.length}',
-                'Total Reports',
-                Icons.report,
+              Expanded(
+                child: _buildStatCard(
+                  context,
+                  '${_reports.where((r) => r['status'] == 'Verified').length}',
+                  'Verified',
+                  Icons.verified,
+                ),
               ),
-              _buildStatCard(
-                context,
-                '${_reports.where((r) => r['status'] == 'Pending').length}',
-                'Pending',
-                Icons.pending,
-              ),
-              _buildStatCard(
-                context,
-                '${_reports.where((r) => r['status'] == 'Resolved').length}',
-                'Resolved',
-                Icons.check_circle,
-              ),
-              _buildStatCard(
-                context,
-                '${_reports.where((r) => r['status'] == 'Verified').length}',
-                'Verified',
-                Icons.verified,
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildStatCard(
+                  context,
+                  '${_reports.where((r) => r['status'] == 'Resolved').length}',
+                  'Resolved',
+                  Icons.check_circle,
+                ),
               ),
             ],
           ),
@@ -241,7 +283,18 @@ class _ReportsPageState extends State<ReportsPage> {
                         cells: [
                           DataCell(Text(report['userName'])),
                           DataCell(Text(report['location'])),
-                          DataCell(Text(report['type'])),
+                          DataCell(
+                            Row(
+                              children: [
+                                Icon(
+                                  _categoryIcon(report['type']),
+                                  color: Colors.redAccent,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(report['type']),
+                              ],
+                            ),
+                          ),
                           DataCell(Text(report['time'])),
                           DataCell(
                             Container(
@@ -347,6 +400,9 @@ class _ReportsPageState extends State<ReportsPage> {
               ],
             ),
           ),
+          const SizedBox(height: 24),
+
+          
         ],
       ),
     );

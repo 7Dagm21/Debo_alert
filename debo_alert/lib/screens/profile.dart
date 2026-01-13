@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -8,7 +7,37 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 // ignore: depend_on_referenced_packages
 import 'package:path/path.dart' as path;
-import '../config/api_config.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart'; // Add this import
+
+PreferredSizeWidget buildDeboAppBar(
+  BuildContext context,
+  VoidCallback onToggleTheme, {
+  String title = 'Debo Alert',
+  List<Widget>? actions,
+}) {
+  return AppBar(
+    title: Row(
+      children: [
+        const Icon(Icons.notifications_active, color: Color(0xFFFF4D2D)),
+        const SizedBox(width: 8),
+        Text(title),
+      ],
+    ),
+    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+    actions:
+        actions ??
+        [
+          IconButton(
+            onPressed: onToggleTheme,
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode
+                  : Icons.dark_mode,
+            ),
+          ),
+        ],
+  );
+}
 
 class ProfilePage extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -32,6 +61,9 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _email;
   bool _loading = true;
 
+  // Use API base URL from .env
+  final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5099';
+
   @override
   void initState() {
     super.initState();
@@ -39,7 +71,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadProfile() async {
-    print('Attempting to connect to: ${ApiConfig.baseUrl}/api/userprofile/me');
+    print('Attempting to connect to: $apiUrl/api/userprofile/me');
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -54,7 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
       );
 
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/userprofile/me'),
+        Uri.parse('$apiUrl/api/userprofile/me'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -96,7 +128,7 @@ class _ProfilePageState extends State<ProfilePage> {
       // Create multipart request
       var request = http.MultipartRequest(
         'POST',
-        Uri.parse('${ApiConfig.baseUrl}/api/userprofile/me'),
+        Uri.parse('$apiUrl/api/userprofile/me'),
       );
 
       // Add headers
@@ -184,7 +216,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
       String url = _profileImageUrl!;
       if (!url.startsWith('http')) {
-        url = 'http://10.2.71.11:5099$url';
+        url = '$apiUrl$url'; // Use apiUrl here
       }
       return ClipOval(
         child: Image.network(
@@ -233,194 +265,172 @@ class _ProfilePageState extends State<ProfilePage> {
     final isDark = widget.themeMode == ThemeMode.dark;
 
     if (_loading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Center(child: CircularProgressIndicator());
     }
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: const Text("Profile"),
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(isEditing ? Icons.save : Icons.edit),
-            onPressed: () async {
-              if (isEditing) {
-                await _saveProfile();
-              } else {
-                setState(() => isEditing = true);
-              }
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Profile Card
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Stack(
-                    children: [
-                      _buildProfileImage(),
-                      if (isEditing)
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).primaryColor,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Theme.of(
-                                  context,
-                                ).scaffoldBackgroundColor,
-                                width: 2,
-                              ),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.camera_alt, size: 18),
-                              color: Colors.white,
-                              onPressed: _pickImage,
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(),
+    // Remove Scaffold and AppBar here!
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // Profile Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Stack(
+                  children: [
+                    _buildProfileImage(),
+                    if (isEditing)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).primaryColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Theme.of(context).scaffoldBackgroundColor,
+                              width: 2,
                             ),
                           ),
+                          child: IconButton(
+                            icon: const Icon(Icons.camera_alt, size: 18),
+                            color: Colors.white,
+                            onPressed: _pickImage,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
                         ),
-                    ],
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _email ?? 'No email',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _email ?? 'No email',
+                ),
+                const SizedBox(height: 16),
+                isEditing
+                    ? TextField(
+                        controller: phoneCtrl,
+                        decoration: InputDecoration(
+                          labelText: 'Phone Number',
+                          prefixIcon: const Icon(Icons.phone),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(
+                            context,
+                          ).inputDecorationTheme.fillColor,
+                        ),
+                      )
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.phone, size: 16),
+                          const SizedBox(width: 8),
+                          Text(
+                            phoneCtrl.text.isEmpty ? 'Not set' : phoneCtrl.text,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.color,
+                            ),
+                          ),
+                        ],
+                      ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          // Theme Toggle Card
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                ListTile(
+                  leading: IconButton(
+                    icon: Icon(
+                      isDark ? Icons.light_mode : Icons.dark_mode,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
+                    onPressed: widget.onToggleTheme,
+                    tooltip: "Toggle theme",
+                  ),
+                  title: Text(
+                    "Theme",
                     style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w500,
                       color: Theme.of(context).textTheme.bodyLarge?.color,
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  isEditing
-                      ? TextField(
-                          controller: phoneCtrl,
-                          decoration: InputDecoration(
-                            labelText: 'Phone Number',
-                            prefixIcon: const Icon(Icons.phone),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            filled: true,
-                            fillColor: Theme.of(
-                              context,
-                            ).inputDecorationTheme.fillColor,
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.phone, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              phoneCtrl.text.isEmpty
-                                  ? 'Not set'
-                                  : phoneCtrl.text,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Theme.of(
-                                  context,
-                                ).textTheme.bodyMedium?.color,
-                              ),
-                            ),
-                          ],
-                        ),
-                ],
-              ),
+                  subtitle: Text(
+                    isDark ? "Dark Mode" : "Light Mode",
+                    style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                    ),
+                  ),
+                ),
+              ],
             ),
+          ),
 
-            const SizedBox(height: 20),
+          const SizedBox(height: 30),
 
-            // Theme Toggle Card
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: IconButton(
-                      icon: Icon(
-                        isDark ? Icons.light_mode : Icons.dark_mode,
-                        color: Theme.of(context).iconTheme.color,
-                      ),
-                      onPressed: widget.onToggleTheme,
-                      tooltip: "Toggle theme",
-                    ),
-                    title: Text(
-                      "Theme",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        color: Theme.of(context).textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    subtitle: Text(
-                      isDark ? "Dark Mode" : "Light Mode",
-                      style: TextStyle(
-                        color: Theme.of(context).textTheme.bodyMedium?.color,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // Logout Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                  if (!mounted) return;
-                  Navigator.pushReplacementNamed(context, '/sign_in');
-                },
-                icon: const Icon(Icons.logout),
-                label: const Text("Logout", style: TextStyle(fontSize: 16)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+          // Logout Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                if (!mounted) return;
+                Navigator.pushReplacementNamed(context, '/sign_in');
+              },
+              icon: const Icon(Icons.logout),
+              label: const Text("Logout", style: TextStyle(fontSize: 16)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
+          ),
 
-            const SizedBox(height: 20),
-          ],
-        ),
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }

@@ -19,6 +19,19 @@ namespace DeboAlertApi.Controllers
             _env = env;
         }
 
+        // PATCH: api/report/{id}
+        [HttpPatch("{id}")]
+        public async Task<IActionResult> UpdateReportStatus(int id, [FromBody] UpdateReportStatusDto dto)
+        {
+            var report = await _context.Reports.FindAsync(id);
+            if (report == null)
+            {
+                return NotFound();
+            }
+            report.Status = dto.Status;
+            await _context.SaveChangesAsync();
+            return Ok(report);
+        }
         [HttpPost]
         [RequestSizeLimit(10_000_000)] // 10MB limit
         public async Task<IActionResult> PostReport([FromForm] ReportDto dto)
@@ -71,7 +84,21 @@ namespace DeboAlertApi.Controllers
         {
             var reports = await _context.Reports
                 .OrderByDescending(r => r.Timestamp)
+                .Select(r => new
+                {
+                    r.Id,
+                    Category = r.Category ?? "",
+                    Description = r.Description ?? "",
+                    IsVideo = r.IsVideo,
+                    Latitude = r.Latitude,
+                    Longitude = r.Longitude,
+                    MediaUrl = r.MediaUrl ?? "",
+                    Status = r.Status ?? "Pending",
+                    Timestamp = r.Timestamp,
+                    UserId = r.UserId ?? ""
+                })
                 .ToListAsync();
+
             return Ok(reports);
         }
     }

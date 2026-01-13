@@ -7,12 +7,25 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:213617734222:android:2aa15c904d623af5aec91f",
+        "mobilesdk_app_id": "1:213617734222:android:154fb48ce7ccdc7eaec91f",
         "android_client_info": {
-          "package_name": "com.example.facebook"
+          "package_name": "com.example.debo_alert"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "213617734222-a46lhk4ugpg30aj2i8gp3750av4n43c8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.debo_alert",
+            "certificate_hash": "9e06152f4420e6293eb9ec6a668a1622c0f0402a"
+          }
+        },
+        {
+          "client_id": "213617734222-13etadmqlb0uam6ltocn47i07te65ufh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCF2qIZdYh9u8VJK5jYEMKWgasfFgE_Gvo"
@@ -20,7 +33,55 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "213617734222-13etadmqlb0uam6ltocn47i07te65ufh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "213617734222-k162o6s1m05gl0u8sgejvtu3octm35jn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.Dag.deboalert"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:213617734222:android:2aa15c904d623af5aec91f",
+        "android_client_info": {
+          "package_name": "com.example.facebook"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "213617734222-13etadmqlb0uam6ltocn47i07te65ufh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCF2qIZdYh9u8VJK5jYEMKWgasfFgE_Gvo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "213617734222-13etadmqlb0uam6ltocn47i07te65ufh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "213617734222-k162o6s1m05gl0u8sgejvtu3octm35jn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.Dag.deboalert"
+              }
+            }
+          ]
         }
       }
     }

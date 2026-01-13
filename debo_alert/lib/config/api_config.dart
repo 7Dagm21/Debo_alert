@@ -1,10 +1,10 @@
 // config/api_config.dart
 class ApiConfig {
   // For local testing - use your PC IP address
-  // static const baseUrl = 'http://10.2.71.11:5099';
+  // static const baseUrl = 'http://192.168.8.7:5099';
 
   // For production - use your domain
-  static const baseUrl = 'http://10.2.71.11:5099';
+  static const baseUrl = 'http://192.168.8.7:5099';
 
   // Helper method to get the correct URL based on environment
   static String getImageUrl(String? relativePath) {

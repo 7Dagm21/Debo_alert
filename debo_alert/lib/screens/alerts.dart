@@ -1,4 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/widgets.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
+
+PreferredSizeWidget buildDeboAppBar(
+  BuildContext context,
+  VoidCallback onToggleTheme, {
+  String title = 'Debo Alert',
+}) {
+  return AppBar(
+    title: Row(
+      children: [
+        const Icon(Icons.notifications_active, color: Color(0xFFFF4D2D)),
+        const SizedBox(width: 8),
+        Text(title),
+      ],
+    ),
+    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+    actions: [
+      IconButton(
+        onPressed: onToggleTheme,
+        icon: Icon(
+          Theme.of(context).brightness == Brightness.dark
+              ? Icons.light_mode
+              : Icons.dark_mode,
+        ),
+      ),
+    ],
+  );
+}
 
 class AlertsPage extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -8,28 +43,98 @@ class AlertsPage extends StatefulWidget {
   State<AlertsPage> createState() => _AlertsPageState();
 }
 
-class _AlertsPageState extends State<AlertsPage> {
+class _AlertsPageState extends State<AlertsPage> with RouteAware {
+  final String apiUrl = dotenv.env['API_BASE_URL'] ?? 'http://localhost:5099';
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Subscribe to route changes
+    routeObserver.subscribe(this, ModalRoute.of(context) as PageRoute);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    // Called when coming back to this page
+    _fetchAlerts();
+  }
+
   String selectedFilter = "All";
+  List<dynamic> _alerts = [];
+  bool _isLoading = false;
+  String? _error;
+
+  Widget _subtitle() {
+    return Text(
+      'Recent alerts near you',
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black,
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAlerts();
+  }
+
+  Future<void> _fetchAlerts() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        setState(() {
+          _error = 'Not authenticated.';
+          _isLoading = false;
+        });
+        return;
+      }
+      final token = await user.getIdToken();
+      final response = await http.get(
+        Uri.parse('$apiUrl/api/alerts'), // Use apiUrl here
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      if (response.statusCode == 200) {
+        setState(() {
+          _alerts = json.decode(response.body);
+        });
+      } else {
+        setState(() {
+          _error = 'Failed to load alerts: ${response.statusCode}';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Error: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-
-      // 🔁 APP BAR WITH THEME TOGGLE
-      appBar: AppBar(
-        elevation: 0,
-        title: const Text("All Alerts"),
-        actions: [
-          IconButton(
-            icon: Icon(isDark ? Icons.light_mode : Icons.dark_mode),
-            onPressed: widget.onToggleTheme,
-          ),
-        ],
-      ),
-
+      appBar: buildDeboAppBar(context, widget.onToggleTheme),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -50,96 +155,42 @@ class _AlertsPageState extends State<AlertsPage> {
     );
   }
 
-  Widget _subtitle() {
-    return const Text(
-      "ሁሉም ማስጠንቀቂያዎች",
-      style: TextStyle(color: Colors.grey, fontSize: 12),
-    );
+  IconData _alertIcon(String title) {
+    final t = title.toLowerCase();
+    if (t.contains('fire')) return Icons.local_fire_department;
+    if (t.contains('car')) return Icons.directions_car;
+    if (t.contains('medical')) return Icons.medical_services;
+    if (t.contains('crime')) return Icons.security;
+    if (t.contains('flood')) return Icons.water_damage;
+    if (t.contains('animal')) return Icons.pets;
+    if (t.contains('electric')) return Icons.electrical_services;
+    return Icons.notifications;
   }
 
-  Widget _searchBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: _cardStyle(),
-      child: const TextField(
-        decoration: InputDecoration(
-          icon: Icon(Icons.search),
-          hintText: "Search alerts...",
-          border: InputBorder.none,
-        ),
-      ),
-    );
-  }
-
-  Widget _filterTabs() {
-    return Row(
-      children: [
-        _filterButton("All"),
-        const SizedBox(width: 8),
-        _filterButton("Active"),
-        const SizedBox(width: 8),
-        _filterButton("Resolved"),
-      ],
-    );
-  }
-
-  Widget _filterButton(String label) {
-    final isSelected = selectedFilter == label;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => selectedFilter = label),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? const Color(0xFFFF4D2D)
-                : Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isSelected ? Colors.white : Colors.grey,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _alertsList() {
-    return ListView(
-      children: [
-        _alertCard(
-          icon: Icons.car_crash,
-          title: "Car Accident on Bole Road",
-          distance: "1.2 km away",
-          time: "5 mins ago",
-          status: "Active",
-          color: Colors.red,
-        ),
-        _alertCard(
-          icon: Icons.local_fire_department,
-          title: "Fire Reported in Piazza",
-          distance: "3.5 km away",
-          time: "12 mins ago",
-          status: "Verified",
-          color: Colors.blue,
-        ),
-      ],
-    );
+  Color _statusColor(String? status) {
+    switch ((status ?? '').toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'verified':
+        return Colors.blue;
+      case 'resolved':
+        return Colors.green;
+      case 'active':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 
   Widget _alertCard({
     required IconData icon,
     required String title,
-    required String distance,
-    required String time,
+    required String region,
+    required String severity,
     required String status,
+    required String createdAt,
     required Color color,
+    String? description,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -160,10 +211,35 @@ class _AlertsPageState extends State<AlertsPage> {
                   title,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
+                if (description != null && description.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2.0),
+                    child: Text(
+                      description,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ),
                 const SizedBox(height: 4),
-                Text(
-                  "$distance • $time",
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                Row(
+                  children: [
+                    Text(
+                      region,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      severity,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      createdAt,
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -183,6 +259,7 @@ class _AlertsPageState extends State<AlertsPage> {
               ),
             ),
           ),
+          // No status change menu for user page
         ],
       ),
     );
@@ -192,6 +269,116 @@ class _AlertsPageState extends State<AlertsPage> {
     return BoxDecoration(
       color: Theme.of(context).cardColor,
       borderRadius: BorderRadius.circular(14),
+    );
+  }
+
+  Widget _alertsList() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(child: Text(_error!));
+    }
+    if (_alerts.isEmpty) {
+      return const Center(child: Text('No alerts found.'));
+    }
+    // Optionally filter alerts based on selectedFilter
+    final filteredAlerts = selectedFilter == "All"
+        ? _alerts
+        : _alerts
+              .where(
+                (a) =>
+                    (a['status'] ?? '').toString().toLowerCase() ==
+                    selectedFilter.toLowerCase(),
+              )
+              .toList();
+    // Sort alerts by createdAt descending (most recent first)
+    filteredAlerts.sort((a, b) {
+      final aDate = DateTime.tryParse(a['createdAt'] ?? '') ?? DateTime(1970);
+      final bDate = DateTime.tryParse(b['createdAt'] ?? '') ?? DateTime(1970);
+      return bDate.compareTo(aDate);
+    });
+    final recentAlerts = filteredAlerts.take(10).toList();
+    return ListView.builder(
+      itemCount: recentAlerts.length,
+      itemBuilder: (context, index) {
+        final alert = recentAlerts[index];
+        return _alertCard(
+          icon: _alertIcon(alert['title'] ?? ''),
+          title: alert['title'] ?? 'Unknown',
+          region: alert['region'] ?? 'Unknown',
+          severity: alert['severity'] ?? 'Medium',
+          status: alert['status'] ?? '',
+          createdAt: alert['createdAt'] != null
+              ? alert['createdAt'].toString().split('T')[0]
+              : '',
+          color: _statusColor(alert['status']),
+          description: alert['description'],
+        );
+      },
+    );
+  }
+
+  Widget _searchBar() {
+    return TextField(
+      decoration: InputDecoration(
+        hintText: 'Search alerts...',
+        prefixIcon: const Icon(Icons.search),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+      ),
+      onChanged: (query) {
+        // Optionally implement search/filter logic here
+        // For now, just ignore or show all
+      },
+    );
+  }
+
+  Widget _filterTabs() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.filter_list, color: Colors.white),
+          tooltip: 'Filter',
+          onPressed: () async {
+            final filters = [
+              'All',
+              'Pending',
+              'Verified',
+              'Resolved',
+              'Active',
+            ];
+            final result = await showDialog<String>(
+              context: context,
+              builder: (context) {
+                return SimpleDialog(
+                  title: const Text('Filter Alerts'),
+                  children: filters.map((filter) {
+                    return SimpleDialogOption(
+                      onPressed: () => Navigator.pop(context, filter),
+                      child: Row(
+                        children: [
+                          if (selectedFilter == filter)
+                            const Icon(Icons.check, color: Colors.red),
+                          if (selectedFilter == filter)
+                            const SizedBox(width: 8),
+                          Text(filter),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
+            );
+            if (result != null && result != selectedFilter) {
+              setState(() {
+                selectedFilter = result;
+              });
+            }
+          },
+        ),
+      ],
     );
   }
 }

@@ -22,5 +22,8 @@ namespace DeboAlertApi.Models
         
         // Add FirebaseUserId if you need it
         public string? FirebaseUserId { get; set; }
+
+        // Admin role
+        public bool IsAdmin { get; set; } = false;
     }
 }

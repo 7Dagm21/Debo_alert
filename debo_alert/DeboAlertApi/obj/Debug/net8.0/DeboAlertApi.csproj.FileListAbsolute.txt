@@ -140,3 +140,4 @@ C:\Users\leult\OneDrive\Desktop\output\flutter\debo_alert\DeboAlertApi\obj\Debug
 C:\Users\leult\OneDrive\Desktop\output\flutter\debo_alert\DeboAlertApi\obj\Debug\net8.0\DeboAlertApi.pdb
 C:\Users\leult\OneDrive\Desktop\output\flutter\debo_alert\DeboAlertApi\obj\Debug\net8.0\DeboAlertApi.genruntimeconfig.cache
 C:\Users\leult\OneDrive\Desktop\output\flutter\debo_alert\DeboAlertApi\obj\Debug\net8.0\ref\DeboAlertApi.dll
+C:\Users\leult\OneDrive\Desktop\output\flutter\debo_alert\DeboAlertApi\obj\Debug\net8.0\DeboAlertApi.sourcelink.json
