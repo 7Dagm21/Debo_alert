@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "604234550060",
+    "project_id": "facebook-4d032",
+    "storage_bucket": "facebook-4d032.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:604234550060:android:c2c987a872ed3abd40ba89",
+        "android_client_info": {
+          "package_name": "com.example.facebook"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "604234550060-2mtgage7906se7vap3s5n4emmmfufffh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJ24cfnSiDJrpYqHxNsyAtKOcxKr90wYk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "604234550060-2mtgage7906se7vap3s5n4emmmfufffh.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "604234550060-3kkmreqm432lic500ics7nd379la46m2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.facebook"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

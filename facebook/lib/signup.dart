@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'design_system.dart';
 
 class signupPage extends StatefulWidget {
   @override
@@ -7,264 +8,218 @@ class signupPage extends StatefulWidget {
 }
 
 class _signupPageState extends State<signupPage> {
+  final TextEditingController _firstNameController = TextEditingController();
+  final TextEditingController _lastNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
   String? selectedValue1;
   String? selectedValue2;
   String? selectedValue3;
   String? gender;
+  bool _isLoading = false;
+
+  Future<void> _signUp() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Signup failed: ${e.toString()}')));
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 221, 214, 214),
-      body: Center(
+      backgroundColor: FBColors.white,
+      appBar: AppBar(
+        backgroundColor: FBColors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: FBColors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Create account',
+          style: TextStyle(color: FBColors.black, fontWeight: FontWeight.bold),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'facebook',
+            const Text(
+              'What\'s your name?',
               style: TextStyle(
-                fontSize: 40,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue,
+                color: FBColors.black,
               ),
             ),
-            SizedBox(height: 20),
-            Container(
-              height: 500,
-              width: 400,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: _FBTextField(
+                    hint: 'First name',
+                    controller: _firstNameController,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _FBTextField(
+                    hint: 'Last name',
+                    controller: _lastNameController,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Birthday',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: FBColors.black,
               ),
-              child: Column(
-                children: [
-                  SizedBox(height: 10),
-                  Text(
-                    'Create New Account',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  Text(
-                    'It\'s quick and easy.',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-
-                  SizedBox(height: 20),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: 'First Name',
-                              hintStyle: TextStyle(
-                                color: const Color.fromARGB(255, 177, 173, 173),
-                              ),
-                              border: OutlineInputBorder(),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      SizedBox(width: 8),
-
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(4.0),
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: 'Last Name',
-                              hintStyle: TextStyle(
-                                color: const Color.fromARGB(255, 177, 173, 173),
-                              ),
-                              border: OutlineInputBorder(),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                                borderSide: BorderSide(
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _FBDropDown(
+                    hint: 'Month',
+                    items: [
+                      'Jan',
+                      'Feb',
+                      'Mar',
+                      'Apr',
+                      'May',
+                      'Jun',
+                      'Jul',
+                      'Aug',
+                      'Sep',
+                      'Oct',
+                      'Nov',
+                      'Dec',
                     ],
+                    value: selectedValue1,
+                    onChanged: (v) => setState(() => selectedValue1 = v),
                   ),
-
-                  SizedBox(height: 10),
-
-                  // Birthday
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '   Birthday',
-                      style: TextStyle(fontSize: 12, color: Colors.black),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _FBDropDown(
+                    hint: 'Day',
+                    items: List.generate(31, (i) => (i + 1).toString()),
+                    value: selectedValue2,
+                    onChanged: (v) => setState(() => selectedValue2 = v),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _FBDropDown(
+                    hint: 'Year',
+                    items: List.generate(
+                      100,
+                      (i) => (DateTime.now().year - i).toString(),
                     ),
+                    value: selectedValue3,
+                    onChanged: (v) => setState(() => selectedValue3 = v),
                   ),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _CustomDropDown(
-                          items: [
-                            'Jan',
-                            'Feb',
-                            'Mar',
-                            'Apr',
-                            'May',
-                            'Jun',
-                            'Jul',
-                            'Aug',
-                            'Sep',
-                            'Oct',
-                            'Nov',
-                            'Dec',
-                          ],
-                          hint: 'Month',
-                          value: selectedValue1,
-                          onChanged: (val) =>
-                              setState(() => selectedValue1 = val),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Gender',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: FBColors.black,
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: RadioListTile<String>(
+                    title: const Text('Male'),
+                    value: 'Male',
+                    groupValue: gender,
+                    onChanged: (v) => setState(() => gender = v),
+                    activeColor: FBColors.blue,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+                Expanded(
+                  child: RadioListTile<String>(
+                    title: const Text('Female'),
+                    value: 'Female',
+                    groupValue: gender,
+                    onChanged: (v) => setState(() => gender = v),
+                    activeColor: FBColors.blue,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            _FBTextField(
+              hint: 'Mobile number or email',
+              controller: _emailController,
+            ),
+            const SizedBox(height: 16),
+            _FBTextField(
+              hint: 'New password',
+              obscureText: true,
+              controller: _passwordController,
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _signUp,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FBColors.blue,
+                  foregroundColor: FBColors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
                         ),
                       ),
-
-                      SizedBox(width: 4),
-
-                      Expanded(
-                        child: _CustomDropDown(
-                          items: List.generate(
-                            31,
-                            (index) => (index + 1).toString(),
-                          ),
-                          hint: 'Day',
-                          value: selectedValue2,
-                          onChanged: (val) =>
-                              setState(() => selectedValue2 = val),
-                        ),
-                      ),
-
-                      SizedBox(width: 4),
-
-                      Expanded(
-                        child: _CustomDropDown(
-                          items: List.generate(
-                            100,
-                            (index) => (DateTime.now().year - index).toString(),
-                          ),
-                          hint: 'Year',
-                          value: selectedValue3,
-                          onChanged: (val) =>
-                              setState(() => selectedValue3 = val),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 10),
-
-                  // gender
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '   Gender',
-                      style: TextStyle(fontSize: 12, color: Colors.black),
-                    ),
-                  ),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: RadioListTile<String>(
-                          title: Text('Male'),
-                          value: 'Male',
-                          groupValue: gender,
-                          onChanged: (val) => setState(() => gender = val),
-                        ),
-                      ),
-
-                      Expanded(
-                        child: RadioListTile<String>(
-                          title: Text('Female'),
-                          value: 'Female',
-                          groupValue: gender,
-                          onChanged: (val) => setState(() => gender = val),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 10),
-
-                  Padding(
-                    padding: EdgeInsets.only(left: 4.0, right: 4.0),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Mobile number or email address',
-                        hintStyle: TextStyle(
-                          color: const Color.fromARGB(255, 177, 173, 173),
-                        ),
-                        border: OutlineInputBorder(),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                          borderSide: BorderSide(color: Colors.grey.shade400),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-
-                  Padding(
-                    padding: EdgeInsets.only(left: 4.0, right: 4.0),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: 'New password',
-                        hintStyle: TextStyle(
-                          color: const Color.fromARGB(255, 177, 173, 173),
-                        ),
-                        border: OutlineInputBorder(),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                          borderSide: BorderSide(color: Colors.grey.shade400),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  SizedBox(height: 10),
-
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      minimumSize: Size(150, 40),
-                    ),
-                    onPressed: () {},
-                    child: Text(
-                      'Sign Up',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                  ),
-
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => loginPage()),
-                      );
-                    },
-                    child: Text(
-                      'Already have an account?',
-                      style: TextStyle(fontSize: 14, color: Colors.blue),
-                    ),
-                  ),
-                ],
               ),
             ),
           ],
@@ -274,38 +229,71 @@ class _signupPageState extends State<signupPage> {
   }
 }
 
-class _CustomDropDown extends StatelessWidget {
-  final List<String> items;
+class _FBTextField extends StatelessWidget {
   final String hint;
+  final bool obscureText;
+  final TextEditingController? controller;
+  const _FBTextField({
+    required this.hint,
+    this.obscureText = false,
+    this.controller,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: FBColors.grey),
+        filled: true,
+        fillColor: FBColors.offWhite.withOpacity(0.3),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
+
+class _FBDropDown extends StatelessWidget {
+  final String hint;
+  final List<String> items;
   final String? value;
   final ValueChanged<String?> onChanged;
 
-  const _CustomDropDown({
-    required this.items,
+  const _FBDropDown({
     required this.hint,
-    required this.value,
+    required this.items,
+    this.value,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      decoration: InputDecoration(
-        border: OutlineInputBorder(),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-          borderSide: BorderSide(color: Colors.grey.shade400),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: FBColors.offWhite.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          hint: Text(hint, style: const TextStyle(color: FBColors.grey)),
+          value: value,
+          onChanged: onChanged,
+          isExpanded: true,
+          items: items
+              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .toList(),
         ),
       ),
-      hint: Text(hint),
-      value: value,
-      onChanged: onChanged,
-      items: items.map((item) {
-        return DropdownMenuItem<String>(value: item, child: Text(item));
-      }).toList(),
-      dropdownColor: Colors.white,
-      menuMaxHeight: 5 * 48.0, // Limit height to show max 5 items
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
     );
   }
 }
